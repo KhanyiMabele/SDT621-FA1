@@ -1,51 +1,103 @@
 ﻿using System;
-string ReadNonEmpty(string prompt)
+using System.Globalization;
+
+class Program
 {
-    while (true)
+    static void Main()
     {
-        Console.Write(prompt);
-        var input = Console.ReadLine();
-        if (!string.IsNullOrWhiteSpace(input)) return input.Trim();
-        Console.WriteLine("please enter something");
-            
+        Console.WriteLine("Simple ATM Withdrawal Simulator\n");
+
+        decimal balance = ReadDecimal("Enter your current account balance: ", min: 0m);
+
+        while (true)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"Current balance: {balance:C}");
+
+            decimal amount = ReadDecimal("Enter amount to withdraw: ", min: 0.01m);
+
+            if (amount > balance)
+            {
+                Console.WriteLine("Insufficient funds for this withdrawal. Transaction cancelled.");
+            }
+            else
+            {
+                decimal previousBalance = balance;
+                balance -= amount;
+
+                PrintReceipt(amount, previousBalance, balance);
+            }
+
+            Console.WriteLine();
+            if (!ReadYesNo("Do you want to perform another transaction? (Y/N): "))
+            {
+                Console.WriteLine("Thank you for using the ATM Simulator. Goodbye.");
+                break;
+            }
         }
     }
-double ReadMark(string prompt)
-{
-    while (true)
+
+    static decimal ReadDecimal(string prompt, decimal min = decimal.MinValue, decimal max = decimal.MaxValue)
     {
-        Console.Write(prompt);
-        var input = Console.ReadLine();
-        if (double.TryParse(input, out var mark))
+        while (true)
         {
-            if (mark < 0)
+            Console.Write(prompt);
+            string? input = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(input))
             {
-                Console.WriteLine("mark can not be negative");
+                Console.WriteLine("Input cannot be empty. Please try again.");
                 continue;
             }
-            return mark;
+
+            // Allow culture-invariant decimal entry (both dot and comma)
+            if (!decimal.TryParse(input, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value) &&
+                !decimal.TryParse(input, NumberStyles.Number, CultureInfo.CurrentCulture, out value))
+            {
+                Console.WriteLine("Invalid number format. Please enter a valid amount (e.g., 100 or 100.50).");
+                continue;
+            }
+
+            if (value < min)
+            {
+                Console.WriteLine($"Value must be at least {min:C}.");
+                continue;
+            }
+
+            if (value > max)
+            {
+                Console.WriteLine($"Value must be at most {max:C}.");
+                continue;
+            }
+
+            return Math.Round(value, 2);
         }
-        Console.WriteLine("enter a number");
+    }
+
+    static bool ReadYesNo(string prompt)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            var key = Console.ReadKey(intercept: true);
+            Console.WriteLine(key.KeyChar);
+            char c = char.ToUpperInvariant(key.KeyChar);
+            if (c == 'Y') return true;
+            if (c == 'N') return false;
+            Console.WriteLine("Please press Y or N.");
+        }
+    }
+
+    static void PrintReceipt(decimal amount, decimal previousBalance, decimal updatedBalance)
+    {
+        Console.WriteLine();
+        Console.WriteLine("---------- TRANSACTION RECEIPT ----------");
+        Console.WriteLine($"Transaction ID : {Guid.NewGuid()}");
+        Console.WriteLine($"Date / Time     : {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        Console.WriteLine($"Transaction     : Withdrawal");
+        Console.WriteLine($"Amount          : {amount:C}");
+        Console.WriteLine($"Previous Balance: {previousBalance:C}");
+        Console.WriteLine($"Updated Balance : {updatedBalance:C}");
+        Console.WriteLine("-----------------------------------------");
     }
 }
-
-var studentName = ReadNonEmpty("student name:  ");
-var mark1 = ReadMark("subject 1 mark: ");
-var mark2 = ReadMark("subject 2 mark: ");
-var mark3 = ReadMark("subject 3 mark: ");
-
-var total = mark1 + mark2 + mark3;
-var average = total / 3;
-
-//pass if average is 50 or more
-var result = average >= 50 ? "PASS" : "FAIL";
-
-Console.WriteLine(); Console.WriteLine("Name: " + studentName);
-Console.WriteLine("Marks" + mark1 + "," + mark2 + "," + mark3);
-Console.WriteLine("Total: " + total);
-Console.WriteLine("Average: " + average.ToString("F2"));
-Console.WriteLine("Result: " + result);
-
-Console.WriteLine();
-Console.WriteLine("done,press any key");
-Console.ReadKey(true);
