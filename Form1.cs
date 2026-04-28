@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace HomeAffairsDigitalidentityProcessor
 {
@@ -10,6 +9,10 @@ namespace HomeAffairsDigitalidentityProcessor
         public Form1()
         {
             InitializeComponent();
+
+
+            btnValidate.Click += btnValidate_Click;
+            btnGenerateProfile.Click += btnGenerateProfile_Click;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -22,22 +25,25 @@ namespace HomeAffairsDigitalidentityProcessor
 
         private void btnValidate_Click(object sender, EventArgs e)
         {
-            string id = txtID.Text;
+            string id = txtID.Text.Trim();
+
             if (ValidateID(id, out int age))
             {
-                label4.Text = $"Valid ID. Citizen is {age} years old.";
+                label5.Text = $"Valid ID. Citizen is {age} years old.";
+                label5.ForeColor = System.Drawing.Color.Green;
             }
             else
             {
-                label4.Text = "Invalid ID format.";
+                label5.Text = "Invalid ID format.";
+                label5.ForeColor = System.Drawing.Color.Red;
             }
         }
 
         private void btnGenerateProfile_Click(object sender, EventArgs e)
         {
-            string name = txtName.Text;
-            string id = txtID.Text;
-            string citizen = cmbCitizen.SelectedItem?.ToString();
+            string name = txtName.Text.Trim();
+            string id = txtID.Text.Trim();
+            string citizen = cmbCitizen.SelectedItem?.ToString() ?? "Not selected";
 
             if (ValidateID(id, out int age))
             {
@@ -60,6 +66,8 @@ namespace HomeAffairsDigitalidentityProcessor
         private bool ValidateID(string id, out int age)
         {
             age = 0;
+
+            // Must be 13 digits
             if (id.Length != 13 || !long.TryParse(id, out _))
                 return false;
 
@@ -68,6 +76,10 @@ namespace HomeAffairsDigitalidentityProcessor
             if (!DateTime.TryParseExact(birthDateStr, "yyMMdd", CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out DateTime birthDate))
                 return false;
+
+            // Adjust century if needed (IDs often use 19xx or 20xx)
+            if (birthDate > DateTime.Now)
+                birthDate = birthDate.AddYears(-100);
 
             // Calculate age
             age = DateTime.Now.Year - birthDate.Year;
